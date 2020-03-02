@@ -1,16 +1,28 @@
 import sys
+import random
 
 class job:
+
+    def calcRunTime(self):
+        return random.randint(self.minTime, self.maxTime)
+    
+    def calcMemSize(self):
+        return random.randint(self.minMemory, self.maxMemory)
+
     def __init__(self, minTime, maxTime, minMemory, maxMemory):
         self.minTime = minTime
         self.maxTime = maxTime
         self.minMemory = minMemory
         self.maxMemory = maxMemory
-        self.remainingTime = 0
+        self.runTime = self.calcRunTime()
+        self.memSize = self.calcMemSize()
+        self.remainingTime = self.runTime
+
 
     def __str__(self):
         #Quick and dirty
-        return ("Min Time: %d, Max Time: %d, Min Memory: %d, Max Memory: %d, Remaining Time: %d" % (self.minTime, self.maxTime, self.minMemory, self.maxMemory, self.remainingTime))
+        return ("Run time is %d, Memory Size is %d, Remaining Time: %d" % (self.runTime, self.memSize, self.remainingTime))
+
 
         
 
@@ -31,8 +43,9 @@ def main():
             jobList.append(job(int(argv[i]), int(argv[i + 1]), int(argv[i + 2 * numJobs]), int(argv[i + 2 * numJobs + 1])))
             jobsIn += 1
             i += 2
-    for loop in range(len(jobList)):
-        print(jobList[loop])
-
+    for k in range(len(jobList)):
+        print(jobList[k])
+    
+    
 
 main()
