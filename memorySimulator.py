@@ -2,6 +2,11 @@ import sys
 import os
 import random
 
+#This method makes the memory values multiples of the page size
+def truncate(n, decimals=0):
+    multiplier = 10 ** decimals
+    return int(n * multiplier) / multiplier
+
 class job:
 
     def calcRunTime(self, minTime, maxTime):
@@ -10,9 +15,10 @@ class job:
     
     def calcMemSize(self, minMemory, maxMemory):
         #Calculate memory needs based on parameters of min-max memory size
-        return random.randint(minMemory, maxMemory)
+        return int(truncate(random.randint(minMemory, maxMemory), -3))
 
-    def __init__(self, minTime, maxTime, minMemory, maxMemory):
+    def __init__(self, jobNum, minTime, maxTime, minMemory, maxMemory):
+        self.jobNum = jobNum
         self.runTime = self.calcRunTime(minTime, maxTime)
         self.memSize = self.calcMemSize(minMemory, maxMemory)
         self.remainingTime = self.runTime
@@ -25,11 +31,24 @@ class job:
 #Method to determine if there are still jobs that have not finished.
 #Small amount of testing has shown that it does work
 def hasTime(jobList):
+    hasTime = False
     for job in jobList:
         if(job.remainingTime > 0):
-            return True
+            hasTime = True
+    return hasTime
+
+def printTable(pageTable, tableSize):
+    i = 0
+    while(i < len(pageTable)):
+        if(i % 16 == 15 and i != 0):
+            print(pageTable[i])
+        elif(i % 4 == 3 and i != 0 and i % 16 != 15):
+            print(pageTable[i], end="\t")
+            
         else:
-            return False
+            #print(i,end="")
+            print(pageTable[i], end="")   
+        i += 1
         
 
 def main():
@@ -50,7 +69,7 @@ def main():
     jobList = []
     #Could probably be a for loop but it works
     while(i < numJobs):
-        jobList.append(job(minTimeSlice, maxTimeSlice, minMemorySlice, maxMemorySlice))
+        jobList.append(job(i, minTimeSlice, maxTimeSlice, minMemorySlice, maxMemorySlice))
         i += 1
     
     #Super ugly print statement but it shows the starting state of the simulator
@@ -58,27 +77,31 @@ def main():
 
     print("Job Queue:\nJob #\t Runtime\tMemory")
     for k in range(len(jobList)):
-        print(str(k + 1) + "\t" + str(jobList[k]))
+        print(str(k) + "\t" + str(jobList[k]))
     print("Simulator Starting:")
-    #This shows the page table, rudimentary right now
-    #TODO: implement the pageTable data structure, print should show how it should look
     pageTable = []
-    for i in range(numSlots + 1):
-        if(i % 16 == 0 and i != 0):
-            print(".")
-        if(i % 4 == 0 and i != 0 and i % 16 != 0):
-            print(".", end="\t")
-        else:
-            print(".", end="")
+    for i in range(numSlots):
+        pageTable.append(".")
+    #Method to print the page table just to make life easier
+    printTable(pageTable, len(pageTable))
     timeStep = 0
     print("")
-    #Jobs that have finished are not terminating as expected
-    #Possibly an error in the hasTime function
-    #Does need a control to only select jobs that have enough memory/have not terminated
+    #Iterates through the jobs and checks to see if time remains
+    runJob = jobList[timeStep]
+    nextJobLoop = 0
     while(hasTime(jobList)):
-        print("Time Step " + str(timeStep))        
-        print("Job " + str(timeStep % len(jobList) + 1) + " running.")
-        jobList[timeStep % len(jobList)].remainingTime -= 1
+        print("Time Step " + str(timeStep))
+        runJob = jobList[(timeStep + nextJobLoop) % len(jobList)]
+        #Iterates through the list to skip jobs that have no time left
+        while(runJob.remainingTime <= 0):
+            runJob = jobList[(timeStep + nextJobLoop) % len(jobList)]
+        print("Job " + str(runJob.jobNum + 1) + " running")
+        nextJobLoop = 0
+        runJob.remainingTime -= 1
+        if(runJob.remainingTime == 0):
+            print("Job " + str(runJob.jobNum + 1) + " finished.")
+            jobList.remove(runJob)
+        printTable(pageTable, len(pageTable))
         timeStep += 1
 
 
