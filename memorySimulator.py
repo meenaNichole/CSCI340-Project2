@@ -3,19 +3,15 @@ import random
 
 class job:
 
-    def calcRunTime(self):
-        return random.randint(self.minTime, self.maxTime)
+    def calcRunTime(self, minTime, maxTime):
+        return random.randint(minTime, maxTime)
     
-    def calcMemSize(self):
-        return random.randint(self.minMemory, self.maxMemory)
+    def calcMemSize(self, minMemory, maxMemory):
+        return random.randint(minMemory, maxMemory)
 
     def __init__(self, minTime, maxTime, minMemory, maxMemory):
-        self.minTime = minTime
-        self.maxTime = maxTime
-        self.minMemory = minMemory
-        self.maxMemory = maxMemory
-        self.runTime = self.calcRunTime()
-        self.memSize = self.calcMemSize()
+        self.runTime = self.calcRunTime(minTime, maxTime)
+        self.memSize = self.calcMemSize(minMemory, maxMemory)
         self.remainingTime = self.runTime
 
 
@@ -35,14 +31,18 @@ def main():
     numSlots = totalMemory // memoryPartition
     numJobs = int(argv[3])
     jobsIn = 0
-    i = 4
+    i = 0
+    minTimeSlice = int(argv[4])
+    maxTimeSlice = int(argv[5])
+    minMemorySlice = int(argv[6])
+    maxMemorySlice = int(argv[7])
     jobList = []
-    while(jobsIn != numJobs):
-        for j in range(numJobs):
-            #Gets the jobs in order assuming parameters of all the time segments then the memory segments.
-            jobList.append(job(int(argv[i]), int(argv[i + 1]), int(argv[i + 2 * numJobs]), int(argv[i + 2 * numJobs + 1])))
-            jobsIn += 1
-            i += 2
+    while(i < numJobs):
+        jobList.append(job(minTimeSlice, maxTimeSlice, minMemorySlice, maxMemorySlice))
+        i += 1
+
+    print("Simulator Parameters:\nMemory Size: %d\nPage Size: %d\nRandom Seed: 2\nNumber of Jobs: %d\nRuntime (min-max) timesteps: %d-%d\nMemory (min-max): %d-%d" % (totalMemory, memoryPartition, numJobs, minTimeSlice, maxTimeSlice, minMemorySlice, maxMemorySlice))
+
     for k in range(len(jobList)):
         print(jobList[k])
     
