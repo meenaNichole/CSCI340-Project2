@@ -2,6 +2,14 @@ import sys
 import os
 import random
 
+# Short README:
+# To run this program:
+# Using the terminal, navigate to directory containing the program.
+# Run: python3 memorySimulator.py <totalMemory><memoryPartition><numJobs><minTime><maxTime><minMemory><maxMemory>
+#	example: python3 memorySimulator.py 48000 1000 3 2 15 5000 25000
+#
+
+
 #This method makes the memory values multiples of the page size
 def truncate(n, decimals=0):
     multiplier = 10 ** decimals
