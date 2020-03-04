@@ -37,6 +37,7 @@ class job:
         self.finishTime = 0
         self.neededSlots = 0
         self.startedJob = False
+        self.inTable = False
 
 
     def __str__(self):
@@ -86,17 +87,29 @@ def findJob(jobList, idNum):
             return i
 
 #Not working as intended, not populating jobs that are not running
-def addJobs(pageTable, jobList):
+def addJobs(pageTable, jobList, runningJobs):
     availableSlots = 0
-    jobIterator = 0
     for i in range(len(pageTable)):
         if(pageTable[i] == '.'):
             availableSlots += 1
-            if(availableSlots > jobList[jobIterator].neededSlots and not jobList[jobIterator].startedJob):
-                pageTable[i - availableSlots] = jobList[jobIterator].jobNum
-                availableSlots -= 1
-    return pageTable                
-        
+        for j in range(len(jobList)):
+            if (availableSlots > jobList[j].neededSlots and not jobList[j].startedJob):
+                runningJobs.append(jobList[j])
+                jobList[j].startedJob = True
+    return runningJobs              
+
+#Need to revisit this method but the job is running, page table does not show that however
+#def updatePages(pageTable, runningJobs):
+#    numPages = 0
+#    for j in range(len(runningJobs)):
+#        if(not runningJobs[j].inTable):
+#            firstAvailSlot = firstOpenSlot(pageTable)
+#            numPages = runningJobs[j].neededSlots
+#            while(numPages > 0):
+#                pageTable[j] = runningJobs[j].jobNum
+#                numPages -= 1    
+#    return pageTable
+
 
 def main():
     #For testing purposes, the args supplemented to the program have been what are in the project
@@ -143,6 +156,7 @@ def main():
         if(jobList[i].neededSlots <= availableSlots):
             runningJobs.append(jobList[i])
             jobList[i].startedJob = True
+            jobList[i].inTable = True
             numPages = jobList[i].neededSlots
             availableSlots -= numPages
             firstAvailableSlot = firstOpenSlot(pageTable)
@@ -167,7 +181,8 @@ def main():
             jobStats.finishTime = timeStep
             runningJobs.remove(runJob)
             pageTable = deleteAll(pageTable, runJob.jobNum)
-            pageTable = addJobs(pageTable, jobList)
+            runningJobs = addJobs(pageTable, jobList, runningJobs)
+            #pageTable = updatePages(pageTable, jobList)
         printTable(pageTable, len(pageTable))
         timeStep += 1
     print("\nJob information:\nJob #\tStart Time\tEnd Time")
