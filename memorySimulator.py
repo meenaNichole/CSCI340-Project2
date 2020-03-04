@@ -1,6 +1,7 @@
 import sys
 import os
 import random
+import copy
 
 # Short README:
 # To run this program:
@@ -32,6 +33,10 @@ class job:
         self.runTime = self.calcRunTime(minTime, maxTime)
         self.memSize = self.calcMemSize(minMemory, maxMemory)
         self.remainingTime = self.runTime
+        self.startTime = 0
+        self.finishTime = 0
+        self.neededSlots = 0
+        self.startedJob = False
 
 
     def __str__(self):
@@ -43,22 +48,54 @@ class job:
 def hasTime(jobList):
     hasTime = False
     for job in jobList:
-        if(job.remainingTime > 0):
+        if(job.remainingTime >= 0):
             hasTime = True
     return hasTime
 
+#Helper Methods
 def printTable(pageTable, tableSize):
     i = 0
     while(i < len(pageTable)):
         if(i % 16 == 15 and i != 0):
             print(pageTable[i])
         elif(i % 4 == 3 and i != 0 and i % 16 != 15):
-            print(pageTable[i], end="\t")
-            
+            print(pageTable[i], end="\t") 
         else:
             #print(i,end="")
             print(pageTable[i], end="")   
         i += 1
+
+#Finds the first open slot in the page table to allow for quick finding of open slots
+def firstOpenSlot(pageTable):
+    for i in range(len(pageTable)):
+        if(pageTable[i] == '.'):
+            return i
+
+#Deletes the job from the page table, once the job is finished
+def deleteAll(pageTable, idToRem):
+    for i in range(len(pageTable)):
+        if(pageTable[i] == idToRem):
+            pageTable[i] = "."
+    return pageTable
+
+#Finds the job in the job list for saving start/end time
+#Needed for implementation of "removing jobs"
+def findJob(jobList, idNum):
+    for i in range(len(jobList)):
+        if(jobList[i].jobNum == idNum):
+            return i
+
+#Not working as intended, not populating jobs that are not running
+def addJobs(pageTable, jobList):
+    availableSlots = 0
+    jobIterator = 0
+    for i in range(len(pageTable)):
+        if(pageTable[i] == '.'):
+            availableSlots += 1
+            if(availableSlots > jobList[jobIterator].neededSlots and not jobList[jobIterator].startedJob):
+                pageTable[i - availableSlots] = jobList[jobIterator].jobNum
+                availableSlots -= 1
+    return pageTable                
         
 
 def main():
@@ -68,6 +105,7 @@ def main():
     totalMemory = int(argv[1])
     memoryPartition = int(argv[2])
     numSlots = totalMemory // memoryPartition
+    availableSlots = numSlots
     numJobs = int(argv[3])
     randomSeed = 13
     random.seed(randomSeed)
@@ -76,23 +114,22 @@ def main():
     minMemorySlice = int(argv[6])
     maxMemorySlice = int(argv[7])
     jobList = []
-    #Could probably be a for loop but it works
-   	
+    finalJobList = []
 
 	#amount of memory that is left based on total memory divinded by the memoryPartition
     remainingMemory = int(totalMemory) / int(memoryPartition)
 	
 	#changed the while loop to a for loop, more efficient
     for i in range(int(numJobs)):
-
-        jobList.append(job(i, minTimeSlice, maxTimeSlice, minMemorySlice, maxMemorySlice))
-    
+        jobList.append(job(i + 1, minTimeSlice, maxTimeSlice, minMemorySlice, maxMemorySlice))
+        jobList[i].neededSlots = jobList[i].memSize // memoryPartition
+        finalJobList = copy.deepcopy(jobList)
     #Super ugly print statement but it shows the starting state of the simulator
     print("Simulator Parameters:\nMemory Size: %d\nPage Size: %d\nRandom Seed: %d\nNumber of Jobs: %d\nRuntime (min-max) timesteps: %d-%d\nMemory (min-max): %d-%d" % (totalMemory, memoryPartition, randomSeed, numJobs, minTimeSlice, maxTimeSlice, minMemorySlice, maxMemorySlice))
 
     print("Job Queue:\nJob #\t Runtime\tMemory")
     for k in range(len(jobList)):
-        print(str(k) + "\t" + str(jobList[k]))
+        print(str(k + 1) + "\t" + str(jobList[k]))
     print("Simulator Starting:")
     pageTable = []
     for i in range(numSlots):
@@ -101,25 +138,41 @@ def main():
     printTable(pageTable, len(pageTable))
     timeStep = 0
     print("")
+    runningJobs = []
+    for i in range(len(jobList)):
+        if(jobList[i].neededSlots <= availableSlots):
+            runningJobs.append(jobList[i])
+            jobList[i].startedJob = True
+            numPages = jobList[i].neededSlots
+            availableSlots -= numPages
+            firstAvailableSlot = firstOpenSlot(pageTable)
+            k = 0
+            while(numPages > 0):
+                pageTable[firstAvailableSlot + k] = (i + 1)
+                k += 1
+                numPages -= 1
+            k = 0
+            
 
     #Iterates through the jobs and checks to see if time remains
-    runJob = jobList[timeStep]
-    nextJobLoop = 0
-    while(hasTime(jobList)):
+    runJob = runningJobs[timeStep]
+    while(hasTime(runningJobs)):
         print("Time Step " + str(timeStep))
-        runJob = jobList[(timeStep + nextJobLoop) % len(jobList)]
-
-        #Iterates through the list to skip jobs that have no time left
-        while(runJob.remainingTime <= 0):
-            runJob = jobList[(timeStep + nextJobLoop) % len(jobList)]
-        print("Job " + str(runJob.jobNum + 1) + " running")
-        nextJobLoop = 0
+        runJob = runningJobs[timeStep % len(runningJobs)]
+        jobStats = finalJobList[findJob(finalJobList, runJob.jobNum)]
+        print("Job " + str(runJob.jobNum) + " running")
         runJob.remainingTime -= 1
-        if(runJob.remainingTime == 0):
-            print("Job " + str(runJob.jobNum + 1) + " finished.")
-            jobList.remove(runJob)
+        if(runJob.remainingTime <= 0):
+            print("Job " + str(runJob.jobNum) + " finished.")
+            jobStats.finishTime = timeStep
+            runningJobs.remove(runJob)
+            pageTable = deleteAll(pageTable, runJob.jobNum)
+            pageTable = addJobs(pageTable, jobList)
         printTable(pageTable, len(pageTable))
         timeStep += 1
+    print("\nJob information:\nJob #\tStart Time\tEnd Time")
+    for finishedJob in finalJobList:
+        print(str(finishedJob.jobNum) + "\t" + str(finishedJob.startTime) + "\t\t" + str(finishedJob.finishTime))
 
 
 main()
