@@ -15,6 +15,8 @@ def truncate(n, decimals=0):
     multiplier = 10 ** decimals
     return int(n * multiplier) / multiplier
 
+
+
 class job:
 
     def calcRunTime(self, minTime, maxTime):
@@ -67,7 +69,6 @@ def main():
     memoryPartition = int(argv[2])
     numSlots = totalMemory // memoryPartition
     numJobs = int(argv[3])
-    i = 0
     randomSeed = 13
     random.seed(randomSeed)
     minTimeSlice = int(argv[4])
@@ -76,9 +77,15 @@ def main():
     maxMemorySlice = int(argv[7])
     jobList = []
     #Could probably be a for loop but it works
-    while(i < numJobs):
+   	
+
+	#amount of memory that is left based on total memory divinded by the memoryPartition
+    remainingMemory = int(totalMemory) / int(memoryPartition)
+
+	#changed the while loop to a for loop, it's more efficient
+    for i in range(int(numJobs)):
+
         jobList.append(job(i, minTimeSlice, maxTimeSlice, minMemorySlice, maxMemorySlice))
-        i += 1
     
     #Super ugly print statement but it shows the starting state of the simulator
     print("Simulator Parameters:\nMemory Size: %d\nPage Size: %d\nRandom Seed: %d\nNumber of Jobs: %d\nRuntime (min-max) timesteps: %d-%d\nMemory (min-max): %d-%d" % (totalMemory, memoryPartition, randomSeed, numJobs, minTimeSlice, maxTimeSlice, minMemorySlice, maxMemorySlice))
@@ -90,16 +97,19 @@ def main():
     pageTable = []
     for i in range(numSlots):
         pageTable.append(".")
+
     #Method to print the page table just to make life easier
     printTable(pageTable, len(pageTable))
     timeStep = 0
     print("")
+
     #Iterates through the jobs and checks to see if time remains
     runJob = jobList[timeStep]
     nextJobLoop = 0
     while(hasTime(jobList)):
         print("Time Step " + str(timeStep))
         runJob = jobList[(timeStep + nextJobLoop) % len(jobList)]
+
         #Iterates through the list to skip jobs that have no time left
         while(runJob.remainingTime <= 0):
             runJob = jobList[(timeStep + nextJobLoop) % len(jobList)]
