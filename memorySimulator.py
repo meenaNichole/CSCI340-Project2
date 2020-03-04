@@ -81,8 +81,8 @@ def main():
 
 	#amount of memory that is left based on total memory divinded by the memoryPartition
     remainingMemory = int(totalMemory) / int(memoryPartition)
-
-	#changed the while loop to a for loop, it's more efficient
+	
+	#changed the while loop to a for loop, more efficient
     for i in range(int(numJobs)):
 
         jobList.append(job(i, minTimeSlice, maxTimeSlice, minMemorySlice, maxMemorySlice))
@@ -97,7 +97,6 @@ def main():
     pageTable = []
     for i in range(numSlots):
         pageTable.append(".")
-
     #Method to print the page table just to make life easier
     printTable(pageTable, len(pageTable))
     timeStep = 0
